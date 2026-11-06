@@ -1,0 +1,105 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Prog\GameA\MainWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Prog\GameA\VulkanCreation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\PipelineManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Renderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ResourceManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Scene.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SwapchainManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\VulkanContext.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\Prog\GameA\MainWindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Prog\GameA\Primitives.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PipelineConfigs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PipelineManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Renderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ResourceManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Scene.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SwapchainManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\VulkanContext.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Prog\GameA\build\CMakeFiles\e4db833e32eed02e6421288661b17b23\CircleShader.vert.spv.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Prog\GameA\build\CMakeFiles\e4db833e32eed02e6421288661b17b23\CircleShader.frag.spv.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Prog\GameA\build\CMakeFiles\e4db833e32eed02e6421288661b17b23\QuadShader.vert.spv.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Prog\GameA\build\CMakeFiles\e4db833e32eed02e6421288661b17b23\QuadShader.frag.spv.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Prog\GameA\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Prog\GameA\build\Debug\CircleShader.vert.spv" />
+    <None Include="C:\Prog\GameA\build\Debug\CircleShader.frag.spv" />
+    <None Include="C:\Prog\GameA\build\Debug\QuadShader.vert.spv" />
+    <None Include="C:\Prog\GameA\build\Debug\QuadShader.frag.spv" />
+    <None Include="C:\Prog\GameA\build\Release\CircleShader.vert.spv" />
+    <None Include="C:\Prog\GameA\build\Release\CircleShader.frag.spv" />
+    <None Include="C:\Prog\GameA\build\Release\QuadShader.vert.spv" />
+    <None Include="C:\Prog\GameA\build\Release\QuadShader.frag.spv" />
+    <None Include="C:\Prog\GameA\build\MinSizeRel\CircleShader.vert.spv" />
+    <None Include="C:\Prog\GameA\build\MinSizeRel\CircleShader.frag.spv" />
+    <None Include="C:\Prog\GameA\build\MinSizeRel\QuadShader.vert.spv" />
+    <None Include="C:\Prog\GameA\build\MinSizeRel\QuadShader.frag.spv" />
+    <None Include="C:\Prog\GameA\build\RelWithDebInfo\CircleShader.vert.spv" />
+    <None Include="C:\Prog\GameA\build\RelWithDebInfo\CircleShader.frag.spv" />
+    <None Include="C:\Prog\GameA\build\RelWithDebInfo\QuadShader.vert.spv" />
+    <None Include="C:\Prog\GameA\build\RelWithDebInfo\QuadShader.frag.spv" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{6B850850-0098-305F-AB9B-C11FCB2666A1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{3F921584-C53E-3838-8169-496104B42E30}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{E709656B-2F1E-3704-B4D9-07EE4D9C7180}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

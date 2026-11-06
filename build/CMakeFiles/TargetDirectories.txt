@@ -1,0 +1,14 @@
+C:/Prog/GameA/build/CMakeFiles/GameA.dir
+C:/Prog/GameA/build/CMakeFiles/INSTALL.dir
+C:/Prog/GameA/build/CMakeFiles/ALL_BUILD.dir
+C:/Prog/GameA/build/CMakeFiles/ZERO_CHECK.dir
+C:/Prog/GameA/build/glfw/CMakeFiles/uninstall.dir
+C:/Prog/GameA/build/glfw/CMakeFiles/INSTALL.dir
+C:/Prog/GameA/build/glfw/CMakeFiles/ALL_BUILD.dir
+C:/Prog/GameA/build/glfw/src/CMakeFiles/glfw.dir
+C:/Prog/GameA/build/glfw/src/CMakeFiles/update_mappings.dir
+C:/Prog/GameA/build/glfw/src/CMakeFiles/INSTALL.dir
+C:/Prog/GameA/build/glfw/docs/CMakeFiles/INSTALL.dir
+C:/Prog/GameA/build/3rdparty/tracy/CMakeFiles/TracyClient.dir
+C:/Prog/GameA/build/3rdparty/tracy/CMakeFiles/INSTALL.dir
+C:/Prog/GameA/build/3rdparty/tracy/CMakeFiles/ALL_BUILD.dir

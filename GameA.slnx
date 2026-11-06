@@ -1,0 +1,10 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/Элементы решения/">
+    <File Path="CMakeLists.txt" />
+  </Folder>
+  <Project Path="GameA.vcxproj" Id="256158de-0274-4cdb-913d-ba4c1a720429" />
+</Solution>

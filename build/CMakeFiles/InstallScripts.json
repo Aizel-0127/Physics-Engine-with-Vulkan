@@ -1,0 +1,11 @@
+{
+	"InstallScripts" : 
+	[
+		"C:/Prog/GameA/build/cmake_install.cmake",
+		"C:/Prog/GameA/build/glfw/cmake_install.cmake",
+		"C:/Prog/GameA/build/glfw/src/cmake_install.cmake",
+		"C:/Prog/GameA/build/glfw/docs/cmake_install.cmake",
+		"C:/Prog/GameA/build/3rdparty/tracy/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
