@@ -75,6 +75,9 @@ set(SHADER_SOURCES
     shaders/CircleShader.frag
     shaders/QuadShader.vert
     shaders/QuadShader.frag
+    shaders/LineShader.vert
+    shaders/LineShader.frag
+    shaders/LineGenerator.comp
 )
 
 set(SHADER_SPV_FILES "")
@@ -85,11 +88,29 @@ endforeach()
 # --- Сборка исполняемого файла ---
 
 add_executable(GameA
-    GLFWHandler.cpp
+    # --- Исходные файлы (.cpp) ---
     MainWindow.cpp
     VulkanCreation.cpp
+    VulkanContext.cpp
+    SwapchainManager.cpp
+    Renderer.cpp
+    ResourceManager.cpp
+    PipelineManager.cpp
+    Scene.cpp
+
+    # --- Заголовочные файлы (.h) ---
     MainWindow.h
+    Config.h
     Primitives.h
+    PipelineConfigs.h
+    VulkanContext.h
+    SwapchainManager.h
+    Renderer.h
+    ResourceManager.h
+    PipelineManager.h
+    Scene.h
+
+    # --- Скомпилированные шейдеры ---
     ${SHADER_SPV_FILES}
 )
 

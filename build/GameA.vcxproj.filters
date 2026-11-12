@@ -7,22 +7,22 @@
     <ClCompile Include="C:\Prog\GameA\VulkanCreation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\PipelineManager.cpp">
+    <ClCompile Include="C:\Prog\GameA\VulkanContext.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Renderer.cpp">
+    <ClCompile Include="C:\Prog\GameA\SwapchainManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\ResourceManager.cpp">
+    <ClCompile Include="C:\Prog\GameA\Renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Scene.cpp">
+    <ClCompile Include="C:\Prog\GameA\ResourceManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\SwapchainManager.cpp">
+    <ClCompile Include="C:\Prog\GameA\PipelineManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\VulkanContext.cpp">
+    <ClCompile Include="C:\Prog\GameA\Scene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -30,31 +30,31 @@
     <ClInclude Include="C:\Prog\GameA\MainWindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="C:\Prog\GameA\Config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="C:\Prog\GameA\Primitives.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\PipelineConfigs.h">
+    <ClInclude Include="C:\Prog\GameA\PipelineConfigs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\PipelineManager.h">
+    <ClInclude Include="C:\Prog\GameA\VulkanContext.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\Renderer.h">
+    <ClInclude Include="C:\Prog\GameA\SwapchainManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\ResourceManager.h">
+    <ClInclude Include="C:\Prog\GameA\Renderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\Scene.h">
+    <ClInclude Include="C:\Prog\GameA\ResourceManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\SwapchainManager.h">
+    <ClInclude Include="C:\Prog\GameA\PipelineManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\VulkanContext.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Config.h">
+    <ClInclude Include="C:\Prog\GameA\Scene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -71,6 +71,15 @@
     <CustomBuild Include="C:\Prog\GameA\build\CMakeFiles\e4db833e32eed02e6421288661b17b23\QuadShader.frag.spv.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
+    <CustomBuild Include="C:\Prog\GameA\build\CMakeFiles\e4db833e32eed02e6421288661b17b23\LineShader.vert.spv.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Prog\GameA\build\CMakeFiles\e4db833e32eed02e6421288661b17b23\LineShader.frag.spv.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Prog\GameA\build\CMakeFiles\e4db833e32eed02e6421288661b17b23\LineGenerator.comp.spv.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
     <CustomBuild Include="C:\Prog\GameA\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
@@ -78,18 +87,30 @@
     <None Include="C:\Prog\GameA\build\Debug\CircleShader.frag.spv" />
     <None Include="C:\Prog\GameA\build\Debug\QuadShader.vert.spv" />
     <None Include="C:\Prog\GameA\build\Debug\QuadShader.frag.spv" />
+    <None Include="C:\Prog\GameA\build\Debug\LineShader.vert.spv" />
+    <None Include="C:\Prog\GameA\build\Debug\LineShader.frag.spv" />
+    <None Include="C:\Prog\GameA\build\Debug\LineGenerator.comp.spv" />
     <None Include="C:\Prog\GameA\build\Release\CircleShader.vert.spv" />
     <None Include="C:\Prog\GameA\build\Release\CircleShader.frag.spv" />
     <None Include="C:\Prog\GameA\build\Release\QuadShader.vert.spv" />
     <None Include="C:\Prog\GameA\build\Release\QuadShader.frag.spv" />
+    <None Include="C:\Prog\GameA\build\Release\LineShader.vert.spv" />
+    <None Include="C:\Prog\GameA\build\Release\LineShader.frag.spv" />
+    <None Include="C:\Prog\GameA\build\Release\LineGenerator.comp.spv" />
     <None Include="C:\Prog\GameA\build\MinSizeRel\CircleShader.vert.spv" />
     <None Include="C:\Prog\GameA\build\MinSizeRel\CircleShader.frag.spv" />
     <None Include="C:\Prog\GameA\build\MinSizeRel\QuadShader.vert.spv" />
     <None Include="C:\Prog\GameA\build\MinSizeRel\QuadShader.frag.spv" />
+    <None Include="C:\Prog\GameA\build\MinSizeRel\LineShader.vert.spv" />
+    <None Include="C:\Prog\GameA\build\MinSizeRel\LineShader.frag.spv" />
+    <None Include="C:\Prog\GameA\build\MinSizeRel\LineGenerator.comp.spv" />
     <None Include="C:\Prog\GameA\build\RelWithDebInfo\CircleShader.vert.spv" />
     <None Include="C:\Prog\GameA\build\RelWithDebInfo\CircleShader.frag.spv" />
     <None Include="C:\Prog\GameA\build\RelWithDebInfo\QuadShader.vert.spv" />
     <None Include="C:\Prog\GameA\build\RelWithDebInfo\QuadShader.frag.spv" />
+    <None Include="C:\Prog\GameA\build\RelWithDebInfo\LineShader.vert.spv" />
+    <None Include="C:\Prog\GameA\build\RelWithDebInfo\LineShader.frag.spv" />
+    <None Include="C:\Prog\GameA\build\RelWithDebInfo\LineGenerator.comp.spv" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="CMake Rules">

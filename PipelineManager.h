@@ -2,14 +2,28 @@
 #include "Config.h"
 #include "PipelineConfigs.h"
 
+struct ComputePushConstants {
+    uint32_t totalPoints; // Сколько всего точек для обработки
+    uint32_t padding[3];  // Выравнивание до 16 байт (требование Vulkan)
+};
+
 class PipelineManager
 {
 private:
     VkDevice device = VK_NULL_HANDLE;
 public:
+
 	VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
 	VkPipeline circlePipeline = VK_NULL_HANDLE;
 	VkPipeline quadPipeline = VK_NULL_HANDLE;
+    VkPipeline lineGraphicsPipeline = VK_NULL_HANDLE;
+
+    // --- ПОЛЯ ДЛЯ COMPUTE ---
+    VkPipelineLayout computePipelineLayout = VK_NULL_HANDLE;
+    VkPipeline lineComputePipeline = VK_NULL_HANDLE;
+
+    void createComputePipelineLayout(VkDescriptorSetLayout computeDescriptorSetLayout);
+    void createComputePipeline();
 
 	void createPipelineLayout(VkDescriptorSetLayout descriptorSetLayout);
 	VkPipeline createGraphicsPipeline(const BasePipelineConfig& config, VkPipelineLayout layout, VkFormat colorFormat, VkFormat depthFormat, VkSampleCountFlagBits samples);
@@ -38,10 +52,16 @@ public:
 
         if (circlePipeline != VK_NULL_HANDLE)
             vkDestroyPipeline(device, circlePipeline, nullptr);
+        if (lineGraphicsPipeline != VK_NULL_HANDLE)
+            vkDestroyPipeline(device, lineGraphicsPipeline, nullptr);
         if (quadPipeline != VK_NULL_HANDLE)
             vkDestroyPipeline(device, quadPipeline, nullptr);
         if (pipelineLayout != VK_NULL_HANDLE)
             vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+        if (lineComputePipeline != VK_NULL_HANDLE)
+            vkDestroyPipeline(device, lineComputePipeline, nullptr);
+        if (computePipelineLayout != VK_NULL_HANDLE)
+            vkDestroyPipelineLayout(device, computePipelineLayout, nullptr);
     }
 };
 

@@ -46,11 +46,12 @@ void ResourceManager::createBuffer(VkPhysicalDevice physicalDevice,
     vkBindBufferMemory(device, buffer, bufferMemory, 0);
 }
 
-void ResourceManager::createUniformBuffers(VkPhysicalDevice physicalDevice)
+void ResourceManager::createRequiredBuffers(VkPhysicalDevice physicalDevice)
 {
     // Размер одного UBO: все круги для одного кадра
     VkDeviceSize bufferSize = sizeof(CircleData) * MAX_CIRCLES;
-
+    VkDeviceSize inputSSBOSize = MAX_TOTAL_POINTS * sizeof(GPULinePoint);
+    VkDeviceSize outputSSBOSize = MAX_TOTAL_POINTS * 12 * sizeof(LineVertex);
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         createBuffer(physicalDevice,
             bufferSize,
@@ -66,24 +67,56 @@ void ResourceManager::createUniformBuffers(VkPhysicalDevice physicalDevice)
         // Замапить память ОДИН РАЗ и сохранить указатель.
         // Каждый кадр писать в uniformBuffersMapped[currentFrame] через memcpy.
         vkMapMemory(device, uniformBuffersMemory[i], 0, bufferSize, 0, &uniformBuffersMapped[i]);
+
+        createBuffer(physicalDevice,
+            inputSSBOSize,
+            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            //HOST_VISIBLE — CPU может замапить память и писать в неё.
+            //HOST_COHERENT — записи CPU автоматически видны GPU без вызова vkFlushMappedMemoryRanges.
+            linesInputSSBO[i],
+            linesInputSSBOMemory[i]
+        );
+        vkMapMemory(device, linesInputSSBOMemory[i], 0, inputSSBOSize, 0, &linesInputSSBOMapped[i]);
+
+        createBuffer(physicalDevice,
+            outputSSBOSize,
+            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+            linesOutputSSBO[i],
+            linesOutputSSBOMemory[i]
+        );
+
+        VkDeviceSize indirectSize = sizeof(VkDrawIndirectCommand); // 16 байт
+
+        createBuffer(physicalDevice, indirectSize,
+            VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, // <-- Оба флага!
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+            linesIndirectBuffer[i], linesIndirectBufferMemory[i]);
     }
 }
 
 void ResourceManager::createDescriptorPool()
 {
-    // Описание количества дескрипторов каждого типа.
-    VkDescriptorPoolSize poolSize{};
-    poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSize.descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+    std::array<VkDescriptorPoolSize, 2> poolSizes{};
+
+    // 1. Uniform Buffers (для графики: круги, квады)
+    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+
+    // 2. Storage Buffers (для Compute Shader линий)
+    // Умножаем на 3, так как каждый сет использует 3 SSBO (Input, Output, Indirect)
+    poolSizes[1].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT * 3);
 
     // Описание пула.
     VkDescriptorPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     poolInfo.pNext = nullptr;
     poolInfo.flags = 0;  // без флагов — sets не сбрасываются индивидуально
-    poolInfo.poolSizeCount = 1;
-    poolInfo.pPoolSizes = &poolSize;
-    poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+    poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+    poolInfo.pPoolSizes = poolSizes.data(); // <--- ИСПОЛЬЗУЕМ .data()
+    poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT * 2);
     //maxSets × количество дескрипторов в layout'е = descriptorCount
 
     if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
@@ -143,7 +176,7 @@ void ResourceManager::createDescriptorSets()
 {
     // 1. Схема для каждого набора — одна и та же (descriptorSetLayout).
     //    Для каждого кадра создаётся свой набор по этой схеме.
-    std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
+    std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayoutGraphics);
 
     // 2. Описание аллокации.
     VkDescriptorSetAllocateInfo allocInfo{};
@@ -154,7 +187,18 @@ void ResourceManager::createDescriptorSets()
     allocInfo.pSetLayouts = layouts.data();
 
     // 3. Выделение наборов.
-    if (vkAllocateDescriptorSets(device, &allocInfo, descriptorSets.data()) != VK_SUCCESS) {
+    if (vkAllocateDescriptorSets(device, &allocInfo, descriptorSetsGraphics.data()) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate descriptor sets!");
+    }
+
+    std::vector<VkDescriptorSetLayout> layoutsCompute(MAX_FRAMES_IN_FLIGHT, descriptorSetLayoutCompute);
+    // Выделение сетов для Compute
+    VkDescriptorSetAllocateInfo computeAllocInfo{};
+    computeAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    computeAllocInfo.descriptorPool = descriptorPool;
+    computeAllocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+    computeAllocInfo.pSetLayouts = layoutsCompute.data(); // Layout с SSBO
+    if (vkAllocateDescriptorSets(device, &computeAllocInfo, descriptorSetsCompute.data()) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate descriptor sets!");
     }
 
@@ -170,7 +214,7 @@ void ResourceManager::createDescriptorSets()
         VkWriteDescriptorSet descriptorWrite{};
         descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrite.pNext = nullptr;
-        descriptorWrite.dstSet = descriptorSets[i];                  // ← в какой набор
+        descriptorWrite.dstSet = descriptorSetsGraphics[i];                  // ← в какой набор
         descriptorWrite.dstBinding = 0;                              // ← в какой binding (совпадает с шейдером)
         descriptorWrite.dstArrayElement = 0;
         descriptorWrite.descriptorCount = 1;
@@ -182,9 +226,60 @@ void ResourceManager::createDescriptorSets()
         // Применяем запись.
         vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
     }
+
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+
+        // --- Настройка Input SSBO (Binding 0) ---
+        VkDescriptorBufferInfo inputBufferInfo{};
+        inputBufferInfo.buffer = linesInputSSBO[i];
+        inputBufferInfo.offset = 0;
+        inputBufferInfo.range = VK_WHOLE_SIZE;
+
+        // --- Настройка Output SSBO (Binding 1) ---
+        VkDescriptorBufferInfo outputBufferInfo{};
+        outputBufferInfo.buffer = linesOutputSSBO[i];
+        outputBufferInfo.offset = 0;
+        outputBufferInfo.range = VK_WHOLE_SIZE;
+
+        // --- Настройка indirect buffer (Binding 2) ---
+        VkDescriptorBufferInfo indirectBufferInfo{};
+        indirectBufferInfo.buffer = linesIndirectBuffer[i];
+        indirectBufferInfo.offset = 0;
+        indirectBufferInfo.range = VK_WHOLE_SIZE;
+
+        // Массив структур для записи (сразу две штуки)
+        std::array<VkWriteDescriptorSet, 3> descriptorWrites{};
+
+        // Запись для Input SSBO
+        descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[0].dstSet = descriptorSetsCompute[i];
+        descriptorWrites[0].dstBinding = 0;
+        descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        descriptorWrites[0].descriptorCount = 1;
+        descriptorWrites[0].pBufferInfo = &inputBufferInfo;
+
+        // Запись для Output SSBO
+        descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[1].dstSet = descriptorSetsCompute[i];
+        descriptorWrites[1].dstBinding = 1;
+        descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        descriptorWrites[1].descriptorCount = 1;
+        descriptorWrites[1].pBufferInfo = &outputBufferInfo;
+
+        // Запись для Output SSBO
+        descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[2].dstSet = descriptorSetsCompute[i];
+        descriptorWrites[2].dstBinding = 2;
+        descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        descriptorWrites[2].descriptorCount = 1;
+        descriptorWrites[2].pBufferInfo = &indirectBufferInfo;
+
+        // Выполняем обе записи за один вызов
+        vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+    }
 }
 
-void ResourceManager::createDescriptorSetLayout()
+void ResourceManager::createDescriptorSetLayouts()
 {
     VkDescriptorSetLayoutBinding uboLayoutBinding{};
     uboLayoutBinding.binding = 0;
@@ -199,7 +294,37 @@ void ResourceManager::createDescriptorSetLayout()
     layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
     layoutInfo.pBindings = bindings.data();
 
-    if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
+    if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayoutGraphics) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor set layout!");
+    }
+
+    VkDescriptorSetLayoutBinding inputBinding{};
+    inputBinding.binding = 0;
+    inputBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    inputBinding.descriptorCount = 1;
+    inputBinding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+    inputBinding.pImmutableSamplers = nullptr; // Optional
+
+    VkDescriptorSetLayoutBinding outputBinding{};
+    outputBinding.binding = 1;
+    outputBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    outputBinding.descriptorCount = 1;
+    outputBinding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+    outputBinding.pImmutableSamplers = nullptr; // Optional
+
+    VkDescriptorSetLayoutBinding indirectBinding{};
+    indirectBinding.binding = 2;
+    indirectBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    indirectBinding.descriptorCount = 1;
+    indirectBinding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+    indirectBinding.pImmutableSamplers = nullptr; // Optional
+
+    std::array<VkDescriptorSetLayoutBinding, 3> linesBindings = { inputBinding, outputBinding, indirectBinding};
+    VkDescriptorSetLayoutCreateInfo layoutInfoCompute{};
+    layoutInfoCompute.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfoCompute.bindingCount = static_cast<uint32_t>(linesBindings.size());
+    layoutInfoCompute.pBindings = linesBindings.data();
+    if (vkCreateDescriptorSetLayout(device, &layoutInfoCompute, nullptr, &descriptorSetLayoutCompute) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor set layout!");
     }
 }

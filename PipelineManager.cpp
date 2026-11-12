@@ -55,6 +55,57 @@ VkShaderStageFlagBits PipelineManager::stageFromExtension(const std::string& pat
     return it->second;
 }
 
+void PipelineManager::createComputePipelineLayout(VkDescriptorSetLayout computeDescriptorSetLayout)
+{
+    // 1. Описание Push Constants
+    VkPushConstantRange pushConstantRange{};
+    pushConstantRange.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT; // Доступно только в Compute
+    pushConstantRange.offset = 0;
+    pushConstantRange.size = sizeof(ComputePushConstants);
+
+    // 2. Описание Layout'а
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayoutInfo.setLayoutCount = 1;
+    pipelineLayoutInfo.pSetLayouts = &computeDescriptorSetLayout; // Тот самый сет с SSBO
+    pipelineLayoutInfo.pushConstantRangeCount = 1;
+    pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
+
+    if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &computePipelineLayout) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create compute pipeline layout!");
+    }
+}
+
+void PipelineManager::createComputePipeline()
+{
+    // 1. Загружаем скомпилированный Compute Shader
+    auto compCode = readFile("LineGenerator.comp.spv");
+    VkShaderModule compModule = createShaderModule(compCode);
+
+    // 2. Заполняем стадию конвейера
+    VkPipelineShaderStageCreateInfo stageInfo{};
+    stageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    stageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT; // <-- Тип стадии
+    stageInfo.module = compModule;
+    stageInfo.pName = "main";
+
+    // 3. Заполняем информацию о пайплайне
+    VkComputePipelineCreateInfo pipelineInfo{};
+    pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+    pipelineInfo.stage = stageInfo;
+    pipelineInfo.layout = computePipelineLayout; // Наш layout
+    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+    pipelineInfo.basePipelineIndex = -1;
+
+    // 4. Создаем (обратите внимание: vkCreateComputePipelines)
+    if (vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &lineComputePipeline) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create compute pipeline!");
+    }
+
+    // 5. Уничтожаем шейдерный модуль (он больше не нужен)
+    vkDestroyShaderModule(device, compModule, nullptr);
+}
+
 void PipelineManager::createPipelineLayout(VkDescriptorSetLayout descriptorSetLayout)
 {
     // 1. Push constant range

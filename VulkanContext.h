@@ -11,7 +11,7 @@ public:
 	{ VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
 	const bool enableValidationLayers = true;
-	bool enableMSAA = false;
+	bool enableMSAA = true;
 	VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 
 	VkInstance instance;

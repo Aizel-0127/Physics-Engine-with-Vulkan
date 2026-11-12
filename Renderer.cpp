@@ -300,6 +300,81 @@ void Renderer::drawFrame(
         );
     }
 
+    // ==========================================================
+    // НАЧАЛО БЛОКА ЛИНИЙ (ДО НАЧАЛА РЕНДЕРИНГА)
+    // ==========================================================
+    if (!scene.lines.empty()) {
+        // 1. Готовим данные на CPU
+        std::vector<GPULinePoint> gpuPoints;
+        // (Здесь вы должны пройтись по scene.lines и заполнить gpuPoints)
+        // Пример:
+         for (const auto& line : scene.lines) {
+             for (size_t i = 0; i < line.points.size(); ++i) {
+                 GPULinePoint p{};
+                 p.position = line.points[i].position;
+                 p.thickness = line.thickness;
+                 p.color = line.color;
+                 p.isEndOfLine = (i == line.points.size() - 1) ? 1 : 0;
+                 gpuPoints.push_back(p);
+             }
+         }
+
+        if (!gpuPoints.empty()) {
+            // 2. Копируем данные в Input SSBO
+            VkDeviceSize dataSize = gpuPoints.size() * sizeof(GPULinePoint);
+            memcpy(resources.linesInputSSBOMapped[currentFrame], gpuPoints.data(), dataSize);
+
+            // 3. Привязываем Compute Pipeline и дескрипторы
+            vkCmdBindPipeline(graphicsCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_COMPUTE, pipelines.lineComputePipeline);
+            vkCmdBindDescriptorSets(graphicsCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_COMPUTE,
+                pipelines.computePipelineLayout, 0, 1, &resources.descriptorSetsCompute[currentFrame], 0, nullptr);
+
+            // 4. Передаем Push Constants (количество точек)
+            ComputePushConstants pc{};
+            pc.totalPoints = static_cast<uint32_t>(gpuPoints.size());
+            vkCmdPushConstants(graphicsCommandBuffers[currentFrame], pipelines.computePipelineLayout,
+                VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pc), &pc);
+
+            // 5. Запускаем Compute Shader (локальный размер группы = 64)
+            uint32_t groupCount = (pc.totalPoints + 63) / 64;
+            vkCmdDispatch(graphicsCommandBuffers[currentFrame], groupCount, 1, 1);
+
+            // 6. БАРЬЕР ПАМЯТИ (Критически важно!)
+            // Ждем, пока Compute Shader запишет данные в Output SSBO и Indirect Buffer
+            std::array<VkBufferMemoryBarrier, 2> barriers{};
+
+            // Барьер для Output SSBO (Vertex Buffer)
+            barriers[0].sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+            barriers[0].srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+            barriers[0].dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+            barriers[0].srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barriers[0].dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barriers[0].buffer = resources.linesOutputSSBO[currentFrame];
+            barriers[0].offset = 0;
+            barriers[0].size = VK_WHOLE_SIZE;
+
+            // Барьер для Indirect Buffer (Аргументы отрисовки)
+            barriers[1].sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+            barriers[1].srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+            barriers[1].dstAccessMask = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
+            barriers[1].srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barriers[1].dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barriers[1].buffer = resources.linesIndirectBuffer[currentFrame];
+            barriers[1].offset = 0;
+            barriers[1].size = VK_WHOLE_SIZE;
+
+            vkCmdPipelineBarrier(
+                graphicsCommandBuffers[currentFrame],
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,     // Откуда: после Compute
+                VK_PIPELINE_STAGE_VERTEX_INPUT_BIT | VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT, // Куда: перед чтением вершин и аргументов
+                0, 0, nullptr, static_cast<uint32_t>(barriers.size()), barriers.data(), 0, nullptr
+            );
+        }
+    }
+    // ==========================================================
+    // КОНЕЦ БЛОКА ЛИНИЙ
+    // ==========================================================
+
     // Начинаем GPU-зону для всего прохода рендеринга
     TracyVkZone(tracyVkCtx, graphicsCommandBuffers[currentFrame], "Main Render Pass");
     vkCmdBeginRendering(graphicsCommandBuffers[currentFrame], &renderingInfo);
@@ -323,27 +398,53 @@ void Renderer::drawFrame(
         VK_SHADER_STAGE_VERTEX_BIT,
         0, sizeof(glm::mat4), &projection);
     // 9. Привязываем pipeline и descriptor set
-    if (!scene.quads.empty()) {
-        vkCmdBindPipeline(graphicsCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.quadPipeline);
-        VkBuffer vertexBuffers[] = { resources.quadVertexBuffers[currentFrame] }; // Берем VRAM буфер
-        VkDeviceSize offsets[] = { 0 };
-        vkCmdBindVertexBuffers(graphicsCommandBuffers[currentFrame], 0, 1, vertexBuffers, offsets);
-        vkCmdDraw(graphicsCommandBuffers[currentFrame], static_cast<uint32_t>(scene.quadVertices.size()), 1, 0, 0);
-    }
+    #pragma region QuadDraw
+        if (!scene.quads.empty()) {
+                vkCmdBindPipeline(graphicsCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.quadPipeline);
+                VkBuffer vertexBuffers[] = { resources.quadVertexBuffers[currentFrame] }; // Берем VRAM буфер
+                VkDeviceSize offsets[] = { 0 };
+                vkCmdBindVertexBuffers(graphicsCommandBuffers[currentFrame], 0, 1, vertexBuffers, offsets);
+                vkCmdDraw(graphicsCommandBuffers[currentFrame], static_cast<uint32_t>(scene.quadVertices.size()), 1, 0, 0);
+            }
+    #pragma endregion
 
+    
+    
+    #pragma region CircleDraw
+        vkCmdBindPipeline(graphicsCommandBuffers[currentFrame],
+            VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.circlePipeline);
+        vkCmdBindDescriptorSets(graphicsCommandBuffers[currentFrame],
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            pipelines.pipelineLayout, 0, 1,
+            &resources.descriptorSetsGraphics[currentFrame],
+            0, nullptr);
+        // 11. Draw call: 4 вершины квада, по одному инстансу на круг
+        vkCmdDraw(graphicsCommandBuffers[currentFrame],
+            4,
+            static_cast<uint32_t>(scene.circles.size()),
+            0, 0);
+    #pragma endregion
+#pragma region LineDraw
+        if (!scene.lines.empty()) {
+            vkCmdBindPipeline(graphicsCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.lineGraphicsPipeline);
 
-    vkCmdBindPipeline(graphicsCommandBuffers[currentFrame],
-        VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.circlePipeline);
-    vkCmdBindDescriptorSets(graphicsCommandBuffers[currentFrame],
-        VK_PIPELINE_BIND_POINT_GRAPHICS,
-        pipelines.pipelineLayout, 0, 1,
-        &resources.descriptorSets[currentFrame],
-        0, nullptr);
-    // 11. Draw call: 4 вершины квада, по одному инстансу на круг
-    vkCmdDraw(graphicsCommandBuffers[currentFrame],
-        4,
-        static_cast<uint32_t>(scene.circles.size()),
-        0, 0);
+            // Output SSBO теперь используется как Vertex Buffer
+            VkBuffer vertexBuffers[] = { resources.linesOutputSSBO[currentFrame] };
+            VkDeviceSize offsets[] = { 0 };
+            vkCmdBindVertexBuffers(graphicsCommandBuffers[currentFrame], 0, 1, vertexBuffers, offsets);
+
+            // Вызов отрисовки с аргументами из Indirect Buffer
+            vkCmdDrawIndirect(
+                graphicsCommandBuffers[currentFrame],
+                resources.linesIndirectBuffer[currentFrame],
+                0,                                  // offset
+                1,                                  // drawCount
+                sizeof(VkDrawIndirectCommand)       // stride
+            );
+        }
+#pragma endregion
+
+    
 
     // 12. Завершаем rendering
     vkCmdEndRendering(graphicsCommandBuffers[currentFrame]);

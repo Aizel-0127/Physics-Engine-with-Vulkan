@@ -6,7 +6,7 @@
 enum class BlendPreset {		//Для добавления нового пресета нужно добавить название в этой структуре
 								//и параметры пресета в функции makeBlendAttachment
 	Opaque,          // blendEnable = FALSE
-	//AlphaBlend,      // SRC_ALPHA / ONE_MINUS_SRC_ALPHA (стандартная прозрачность)
+	AlphaBlend,      // SRC_ALPHA / ONE_MINUS_SRC_ALPHA (стандартная прозрачность)
 	//Additive,        // SRC_ALPHA / ONE (свечение)
 	//Multiply         // DST_COLOR / ZERO (умножение)
 };
@@ -17,7 +17,7 @@ struct BasePipelineConfig
 	const char* entryPoint = "main";
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	VkVertexInputBindingDescription vertexBindingDesc{};
-	std::array<VkVertexInputAttributeDescription, 2> vertexAttrDescs{};
+	std::vector<VkVertexInputAttributeDescription> vertexAttrDescs{};
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
 	VkPipelineViewportStateCreateInfo viewportState{};
 	VkPipelineRasterizationStateCreateInfo rasterizer{};
@@ -112,6 +112,15 @@ struct BasePipelineConfig
 		case BlendPreset::Opaque:
 			attachment.blendEnable = VK_FALSE;
 			break;
+		case BlendPreset::AlphaBlend:
+			attachment.blendEnable = VK_TRUE;
+			attachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+			attachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+			attachment.colorBlendOp = VK_BLEND_OP_ADD;
+			attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+			attachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+			attachment.alphaBlendOp = VK_BLEND_OP_ADD;
+			break;
 		}
 		return attachment;
 	}
@@ -192,7 +201,7 @@ struct BasePipelineConfig
 		vertexInputInfo.pVertexAttributeDescriptions = nullptr;
 	}
 	void SetVertexInput(const VkVertexInputBindingDescription& binding,
-		const std::array<VkVertexInputAttributeDescription, 2>& attributes)
+		const std::vector<VkVertexInputAttributeDescription>& attributes)
 	{
 		// 1. Сохраняем копии данных в поля класса
 		vertexBindingDesc = binding;
@@ -299,6 +308,7 @@ struct CircleConfig :BasePipelineConfig
 		inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
 		rasterizer.cullMode = VK_CULL_MODE_NONE;   // уже так в базовой структуре, но для явности
 		depthStencil.depthTestEnable = VK_FALSE;   // уже так в базовой структуре, но для явности
+		blendPreset = BlendPreset::AlphaBlend;
 	}
 };
 
@@ -321,9 +331,8 @@ struct QuadConfig : BasePipelineConfig {
 	}
 
 	// Описывает, как атрибуты (pos, color) извлекаются из памяти
-	static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions() {
-		std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
-
+	static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions() {
+		std::vector<VkVertexInputAttributeDescription> attributeDescriptions(2);
 		// Атрибут 0: Позиция (vec2) - соответствует layout(location = 0) в шейдере
 		attributeDescriptions[0].binding = 0;
 		attributeDescriptions[0].location = 0;
@@ -337,5 +346,35 @@ struct QuadConfig : BasePipelineConfig {
 		attributeDescriptions[1].offset = offsetof(Vertex, color);
 
 		return attributeDescriptions;
+	}
+};
+
+struct LineConfig : BasePipelineConfig {
+	LineConfig() {
+		shaderPaths = { "LineShader.vert.spv", "LineShader.frag.spv" };
+		inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		blendPreset = BlendPreset::AlphaBlend;
+		SetVertexInput(getBindingDescription(), getAttributeDescriptions());
+	}
+
+	static VkVertexInputBindingDescription getBindingDescription() {
+		VkVertexInputBindingDescription binding{};
+		binding.binding = 0;
+		binding.stride = sizeof(LineVertex);
+		binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+		return binding;
+	}
+
+	static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions() {
+		std::vector<VkVertexInputAttributeDescription> attributes(4);
+		// Pos
+		attributes[0] = { 0, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(LineVertex, pos) };
+		// UV
+		attributes[1] = { 1, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(LineVertex, uv) };
+		// Color
+		attributes[2] = { 2, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(LineVertex, color) };
+		// isCircle
+		attributes[3] = { 3, 0, VK_FORMAT_R32_SFLOAT, offsetof(LineVertex, isCircle) };
+		return attributes;
 	}
 };

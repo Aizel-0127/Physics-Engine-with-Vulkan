@@ -23,8 +23,13 @@ public:
         } };
     std::vector<Quad> quads;
     std::vector<Vertex> quadVertices;
+    std::vector<Curve> lines;
 
     size_t AddQuad(glm::vec2 topLeft, glm::vec2 topRight, glm::vec2 bottomRight, glm::vec2 bottomLeft, glm::vec4 color);
     size_t AddQuad(const Quad&);
+    size_t AddCurve(const std::vector<glm::vec2>& points, glm::vec4 color, float thickness);
+
+    // Тестовая функция для генерации графика функции (синусоиды)
+    void AddSineWave(float startX, float endX, float step, float amplitude, float offsetY, glm::vec4 color, float thickness);
     void UpdateQuadVertices();
 };

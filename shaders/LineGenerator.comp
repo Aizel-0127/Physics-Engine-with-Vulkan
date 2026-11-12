@@ -1,0 +1,93 @@
+#version 450
+
+struct GPULinePoint {
+    vec2 position;
+    float thickness;
+    uint isEndOfLine;
+    vec4 color;
+};
+
+struct LineVertex {
+    vec2 pos;
+    vec2 uv;
+    vec4 color;
+    float isCircle;
+    float padding[3];
+};
+
+struct VkDrawIndirectCommand {
+    uint vertexCount;
+    uint instanceCount;
+    uint firstVertex;
+    uint firstInstance;
+};
+
+layout(std430, binding = 0) readonly buffer InputPoints { GPULinePoint points[]; };
+layout(std430, binding = 1) writeonly buffer OutputVertices { LineVertex vertices[]; };
+layout(std430, binding = 2) writeonly buffer IndirectBuffer { VkDrawIndirectCommand drawCommand; };
+
+layout(push_constant) uniform PushConstants {
+    uint totalPoints;
+} pc;
+
+layout(local_size_x = 64) in;
+
+void main() {
+    uint i = gl_GlobalInvocationID.x;
+    if (i >= pc.totalPoints) return;
+    
+    GPULinePoint p = points[i];
+    float h = p.thickness * 0.5;
+
+    // 1. Все СЕГМЕНТЫ идут в первой половине буфера
+    uint baseSeg = pc.totalPoints * 6 + i * 6; 
+    
+    if (i < pc.totalPoints - 1 && p.isEndOfLine == 0) {
+        GPULinePoint p2 = points[i + 1];
+        vec2 dir = p2.position - p.position;
+        float len = length(dir);
+        
+        if (len > 0.0001) {
+            dir /= len;
+            vec2 normal = vec2(-dir.y, dir.x) * h;
+            
+            // НЕ удлиняем отрезок! Он идет от центра до центра.
+            vec2 a = p.position;
+            vec2 b = p2.position;
+
+            // 2 треугольника (6 вершин)
+            vertices[baseSeg + 0] = LineVertex(a + normal, vec2(0, -1), p.color,  0.0, float[3](0,0,0));
+            vertices[baseSeg + 1] = LineVertex(a - normal, vec2(0,  1), p.color,  0.0, float[3](0,0,0));
+            vertices[baseSeg + 2] = LineVertex(b - normal, vec2(1,  1), p2.color, 0.0, float[3](0,0,0));
+            
+            vertices[baseSeg + 3] = LineVertex(a + normal, vec2(0, -1), p.color,  0.0, float[3](0,0,0));
+            vertices[baseSeg + 4] = LineVertex(b - normal, vec2(1,  1), p2.color, 0.0, float[3](0,0,0));
+            vertices[baseSeg + 5] = LineVertex(b + normal, vec2(1, -1), p2.color, 0.0, float[3](0,0,0));
+        }
+    } else {
+        // Дегенеративные треугольники для последней точки
+        for (int k = 0; k < 6; ++k) {
+            vertices[baseSeg + k] = LineVertex(p.position, vec2(0), p.color, 0.0, float[3](0,0,0));
+        }
+    }
+
+    // 2. Все КРУГИ идут во второй половине буфера
+    uint baseCirc = i * 6; 
+    vec2 c = p.position;
+    vertices[baseCirc + 0] = LineVertex(c + vec2(-h,-h), vec2(-1,-1), p.color, 1.0, float[3](0,0,0));
+    vertices[baseCirc + 1] = LineVertex(c + vec2( h,-h), vec2( 1,-1), p.color, 1.0, float[3](0,0,0));
+    vertices[baseCirc + 2] = LineVertex(c + vec2( h, h), vec2( 1, 1), p.color, 1.0, float[3](0,0,0));
+    
+    vertices[baseCirc + 3] = LineVertex(c + vec2(-h,-h), vec2(-1,-1), p.color, 1.0, float[3](0,0,0));
+    vertices[baseCirc + 4] = LineVertex(c + vec2( h, h), vec2( 1, 1), p.color, 1.0, float[3](0,0,0));
+    vertices[baseCirc + 5] = LineVertex(c + vec2(-h, h), vec2(-1, 1), p.color, 1.0, float[3](0,0,0));
+    
+    // 3. Настраиваем Indirect Buffer (делает только поток 0)
+    if (i == 0) {
+        // Мы всегда генерируем ровно 12 вершин на точку (6 на отрезок, 6 на круг)
+        drawCommand.vertexCount = pc.totalPoints * 12;
+        drawCommand.instanceCount = 1;
+        drawCommand.firstVertex = 0;
+        drawCommand.firstInstance = 0;
+    }
+}

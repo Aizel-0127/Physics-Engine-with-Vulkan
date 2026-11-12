@@ -36,6 +36,7 @@ const uint32_t HEIGHT = 600;
 
 static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 static constexpr uint32_t MAX_CIRCLES = 100;
+static constexpr uint32_t MAX_TOTAL_POINTS = 10000; //Максимальное кол-во точек, которое может обработаться при отрисовке всех линий (Curve из Primitives.h) 
 
 struct QueueFamilyIndices {
     std::optional<uint32_t> graphicsFamily;
