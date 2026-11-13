@@ -7,7 +7,17 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Экспорт compile_commands.json для автодополнения в редакторах
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
+# --- ImGui ---
+set(IMGUI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/imgui")
+# Основные файлы ImGui
+set(IMGUI_SOURCES
+    ${IMGUI_DIR}/imgui.cpp
+    ${IMGUI_DIR}/imgui_draw.cpp
+    ${IMGUI_DIR}/imgui_tables.cpp
+    ${IMGUI_DIR}/imgui_widgets.cpp
+    ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp
+    ${IMGUI_DIR}/backends/imgui_impl_vulkan.cpp
+)
 # --- Поиск зависимостей ---
 
 # Vulkan
@@ -97,6 +107,7 @@ add_executable(GameA
     ResourceManager.cpp
     PipelineManager.cpp
     Scene.cpp
+    PhysicsWorld.cpp
 
     # --- Заголовочные файлы (.h) ---
     MainWindow.h
@@ -109,9 +120,11 @@ add_executable(GameA
     ResourceManager.h
     PipelineManager.h
     Scene.h
+    PhysicsWorld.h
 
     # --- Скомпилированные шейдеры ---
     ${SHADER_SPV_FILES}
+    ${IMGUI_SOURCES}
 )
 
 # --- Подключение зависимостей ---
@@ -123,6 +136,8 @@ target_link_libraries(GameA PRIVATE
 )
 target_include_directories(GameA PRIVATE
     "C:/Program Files/Microsoft Visual Studio/18/Community/Libraries/glm"
+    ${IMGUI_DIR}
+    ${IMGUI_DIR}/backends
 )
 
 # --- Настройки для MSVC ---

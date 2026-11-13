@@ -5,7 +5,7 @@
 struct CircleData {
     glm::vec2 center;   // 8 байт (offset 0)
     float radius;       // 4 байта (offset 8)
-    float padding;      // 4 байта (offset 12) — чтобы следующий vec4 был выровнен
+    uint32_t physicsIndex = UINT32_MAX;
     glm::vec4 color;    // 16 байт (offset 16)
 };                      // Итого: 32 байта на круг
 
@@ -19,6 +19,7 @@ struct Quad
     // Порядок вершин: 0 - слева сверху и дальше по часовой
     std::array<glm::vec2, 4> points;
     glm::vec4 color;
+    uint32_t physicsIndex = UINT32_MAX;
 };
 
 struct Point {
@@ -29,6 +30,7 @@ struct Curve {
     std::vector<Point> points;
     glm::vec4 color;
     float thickness;
+    uint32_t physicsIndex = UINT32_MAX;
 };
 
 struct GPULinePoint {    //CPU -> Compute Shader

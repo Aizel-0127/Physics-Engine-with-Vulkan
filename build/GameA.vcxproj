@@ -90,7 +90,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Program Files\Microsoft Visual Studio\18\Community\Libraries\glm;C:\Prog\Libraries\glfw-3.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\Microsoft Visual Studio\18\Community\Libraries\glm;C:\Prog\GameA\3rdparty\imgui;C:\Prog\GameA\3rdparty\imgui\backends;C:\Prog\Libraries\glfw-3.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions) /external:I "C:/Prog/GameA/3rdparty/tracy/public" /external:I "C:/VulkanSDK/1.4.350.0/include"</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -120,10 +120,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;TRACY_ENABLE;TRACY_ON_DEMAND;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Program Files\Microsoft Visual Studio\18\Community\Libraries\glm;C:\Prog\Libraries\glfw-3.4\include;C:\Prog\GameA\3rdparty\tracy\public;C:\VulkanSDK\1.4.350.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\Microsoft Visual Studio\18\Community\Libraries\glm;C:\Prog\GameA\3rdparty\imgui;C:\Prog\GameA\3rdparty\imgui\backends;C:\Prog\Libraries\glfw-3.4\include;C:\Prog\GameA\3rdparty\tracy\public;C:\VulkanSDK\1.4.350.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Program Files\Microsoft Visual Studio\18\Community\Libraries\glm;C:\Prog\Libraries\glfw-3.4\include;C:\Prog\GameA\3rdparty\tracy\public;C:\VulkanSDK\1.4.350.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\Microsoft Visual Studio\18\Community\Libraries\glm;C:\Prog\GameA\3rdparty\imgui;C:\Prog\GameA\3rdparty\imgui\backends;C:\Prog\Libraries\glfw-3.4\include;C:\Prog\GameA\3rdparty\tracy\public;C:\VulkanSDK\1.4.350.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -150,7 +150,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Program Files\Microsoft Visual Studio\18\Community\Libraries\glm;C:\Prog\Libraries\glfw-3.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\Microsoft Visual Studio\18\Community\Libraries\glm;C:\Prog\GameA\3rdparty\imgui;C:\Prog\GameA\3rdparty\imgui\backends;C:\Prog\Libraries\glfw-3.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions) /external:I "C:/Prog/GameA/3rdparty/tracy/public" /external:I "C:/VulkanSDK/1.4.350.0/include"</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -181,10 +181,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;TRACY_ENABLE;TRACY_ON_DEMAND;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Program Files\Microsoft Visual Studio\18\Community\Libraries\glm;C:\Prog\Libraries\glfw-3.4\include;C:\Prog\GameA\3rdparty\tracy\public;C:\VulkanSDK\1.4.350.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\Microsoft Visual Studio\18\Community\Libraries\glm;C:\Prog\GameA\3rdparty\imgui;C:\Prog\GameA\3rdparty\imgui\backends;C:\Prog\Libraries\glfw-3.4\include;C:\Prog\GameA\3rdparty\tracy\public;C:\VulkanSDK\1.4.350.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Program Files\Microsoft Visual Studio\18\Community\Libraries\glm;C:\Prog\Libraries\glfw-3.4\include;C:\Prog\GameA\3rdparty\tracy\public;C:\VulkanSDK\1.4.350.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\Microsoft Visual Studio\18\Community\Libraries\glm;C:\Prog\GameA\3rdparty\imgui;C:\Prog\GameA\3rdparty\imgui\backends;C:\Prog\Libraries\glfw-3.4\include;C:\Prog\GameA\3rdparty\tracy\public;C:\VulkanSDK\1.4.350.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -211,7 +211,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Program Files\Microsoft Visual Studio\18\Community\Libraries\glm;C:\Prog\Libraries\glfw-3.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\Microsoft Visual Studio\18\Community\Libraries\glm;C:\Prog\GameA\3rdparty\imgui;C:\Prog\GameA\3rdparty\imgui\backends;C:\Prog\Libraries\glfw-3.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions) /external:I "C:/Prog/GameA/3rdparty/tracy/public" /external:I "C:/VulkanSDK/1.4.350.0/include"</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -242,10 +242,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;TRACY_ENABLE;TRACY_ON_DEMAND;CMAKE_INTDIR=\"MinSizeRel\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Program Files\Microsoft Visual Studio\18\Community\Libraries\glm;C:\Prog\Libraries\glfw-3.4\include;C:\Prog\GameA\3rdparty\tracy\public;C:\VulkanSDK\1.4.350.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\Microsoft Visual Studio\18\Community\Libraries\glm;C:\Prog\GameA\3rdparty\imgui;C:\Prog\GameA\3rdparty\imgui\backends;C:\Prog\Libraries\glfw-3.4\include;C:\Prog\GameA\3rdparty\tracy\public;C:\VulkanSDK\1.4.350.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Program Files\Microsoft Visual Studio\18\Community\Libraries\glm;C:\Prog\Libraries\glfw-3.4\include;C:\Prog\GameA\3rdparty\tracy\public;C:\VulkanSDK\1.4.350.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\Microsoft Visual Studio\18\Community\Libraries\glm;C:\Prog\GameA\3rdparty\imgui;C:\Prog\GameA\3rdparty\imgui\backends;C:\Prog\Libraries\glfw-3.4\include;C:\Prog\GameA\3rdparty\tracy\public;C:\VulkanSDK\1.4.350.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -272,7 +272,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Program Files\Microsoft Visual Studio\18\Community\Libraries\glm;C:\Prog\Libraries\glfw-3.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\Microsoft Visual Studio\18\Community\Libraries\glm;C:\Prog\GameA\3rdparty\imgui;C:\Prog\GameA\3rdparty\imgui\backends;C:\Prog\Libraries\glfw-3.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions) /external:I "C:/Prog/GameA/3rdparty/tracy/public" /external:I "C:/VulkanSDK/1.4.350.0/include"</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -302,10 +302,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;TRACY_ENABLE;TRACY_ON_DEMAND;CMAKE_INTDIR=\"RelWithDebInfo\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Program Files\Microsoft Visual Studio\18\Community\Libraries\glm;C:\Prog\Libraries\glfw-3.4\include;C:\Prog\GameA\3rdparty\tracy\public;C:\VulkanSDK\1.4.350.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\Microsoft Visual Studio\18\Community\Libraries\glm;C:\Prog\GameA\3rdparty\imgui;C:\Prog\GameA\3rdparty\imgui\backends;C:\Prog\Libraries\glfw-3.4\include;C:\Prog\GameA\3rdparty\tracy\public;C:\VulkanSDK\1.4.350.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Program Files\Microsoft Visual Studio\18\Community\Libraries\glm;C:\Prog\Libraries\glfw-3.4\include;C:\Prog\GameA\3rdparty\tracy\public;C:\VulkanSDK\1.4.350.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\Microsoft Visual Studio\18\Community\Libraries\glm;C:\Prog\GameA\3rdparty\imgui;C:\Prog\GameA\3rdparty\imgui\backends;C:\Prog\Libraries\glfw-3.4\include;C:\Prog\GameA\3rdparty\tracy\public;C:\VulkanSDK\1.4.350.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -788,6 +788,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\Prog\GameA\ResourceManager.cpp" />
     <ClCompile Include="C:\Prog\GameA\PipelineManager.cpp" />
     <ClCompile Include="C:\Prog\GameA\Scene.cpp" />
+    <ClCompile Include="C:\Prog\GameA\PhysicsWorld.cpp" />
     <ClInclude Include="C:\Prog\GameA\MainWindow.h" />
     <ClInclude Include="C:\Prog\GameA\Config.h" />
     <ClInclude Include="C:\Prog\GameA\Primitives.h" />
@@ -798,6 +799,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClInclude Include="C:\Prog\GameA\ResourceManager.h" />
     <ClInclude Include="C:\Prog\GameA\PipelineManager.h" />
     <ClInclude Include="C:\Prog\GameA\Scene.h" />
+    <ClInclude Include="C:\Prog\GameA\PhysicsWorld.h" />
     <None Include="C:\Prog\GameA\build\Debug\CircleShader.vert.spv">
     </None>
     <None Include="C:\Prog\GameA\build\Debug\CircleShader.frag.spv">
@@ -812,6 +814,12 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     </None>
     <None Include="C:\Prog\GameA\build\Debug\LineGenerator.comp.spv">
     </None>
+    <ClCompile Include="C:\Prog\GameA\3rdparty\imgui\imgui.cpp" />
+    <ClCompile Include="C:\Prog\GameA\3rdparty\imgui\imgui_draw.cpp" />
+    <ClCompile Include="C:\Prog\GameA\3rdparty\imgui\imgui_tables.cpp" />
+    <ClCompile Include="C:\Prog\GameA\3rdparty\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="C:\Prog\GameA\3rdparty\imgui\backends\imgui_impl_glfw.cpp" />
+    <ClCompile Include="C:\Prog\GameA\3rdparty\imgui\backends\imgui_impl_vulkan.cpp" />
     <None Include="C:\Prog\GameA\build\Release\CircleShader.vert.spv">
     </None>
     <None Include="C:\Prog\GameA\build\Release\CircleShader.frag.spv">

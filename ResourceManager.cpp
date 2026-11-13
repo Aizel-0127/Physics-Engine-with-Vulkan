@@ -2,6 +2,7 @@
 #include "ResourceManager.h"
 #include "SwapchainManager.h"
 #include "Scene.h"
+#include <imgui.h>
 void ResourceManager::updateCircleUniformBuffer(Scene& scene, uint32_t currentImage)
 {
     // 1. Копируем данные кругов в mapped UBO текущего кадра
@@ -96,7 +97,7 @@ void ResourceManager::createRequiredBuffers(VkPhysicalDevice physicalDevice)
     }
 }
 
-void ResourceManager::createDescriptorPool()
+void ResourceManager::createDescriptorPools()
 {
     std::array<VkDescriptorPoolSize, 2> poolSizes{};
 
@@ -121,6 +122,31 @@ void ResourceManager::createDescriptorPool()
 
     if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor pool!");
+    }
+
+    VkDescriptorPoolSize pool_sizes[] = {
+        { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+        { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+        { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+        { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+    };
+
+    VkDescriptorPoolCreateInfo pool_info{};
+    pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+    pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes); // 11000 сетов
+    pool_info.poolSizeCount = static_cast<uint32_t>(IM_ARRAYSIZE(pool_sizes));
+    pool_info.pPoolSizes = pool_sizes;
+
+    if (vkCreateDescriptorPool(device, &pool_info, nullptr, &descriptorPoolImGUI) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create ImGui descriptor pool!");
     }
 }
 

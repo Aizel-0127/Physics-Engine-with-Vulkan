@@ -5,6 +5,9 @@
 #include "PipelineManager.h"
 #include "ResourceManager.h"
 #include "Scene.h"
+#include "PhysicsWorld.h"
+#include "imgui_impl_vulkan.h"
+#include "imgui_impl_glfw.h"
 
 void Renderer::createPresentCommandResources(QueueFamilyIndices queueFamilyIndices, SwapchainManager& swapchain)
 {
@@ -140,6 +143,7 @@ void Renderer::drawFrame(
     PipelineManager& pipelines,
     ResourceManager& resources,
     Scene& scene,
+    PhysicsWorld& physicsWorld,
     TracyVkCtx tracyVkCtx
 )
 {
@@ -156,8 +160,7 @@ void Renderer::drawFrame(
     glm::mat4 projection;
     // Ортографическая проекция: от (0,0) до (WIDTH, HEIGHT), ось Y вниз
     projection = glm::ortho(0.0f, static_cast<float>(WIDTH),
-        static_cast<float>(HEIGHT), 0.0f,
-        -1.0f, 1.0f);
+        0.0f, static_cast<float>(HEIGHT), -1.0f, 1.0f);
 
     // 1. Ждём, пока GPU закончит с командным буфером текущего кадра
     vkWaitForFences(context.device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
@@ -300,9 +303,8 @@ void Renderer::drawFrame(
         );
     }
 
-    // ==========================================================
-    // НАЧАЛО БЛОКА ЛИНИЙ (ДО НАЧАЛА РЕНДЕРИНГА)
-    // ==========================================================
+#pragma region PreparationsForLines
+
     if (!scene.lines.empty()) {
         // 1. Готовим данные на CPU
         std::vector<GPULinePoint> gpuPoints;
@@ -371,9 +373,33 @@ void Renderer::drawFrame(
             );
         }
     }
-    // ==========================================================
-    // КОНЕЦ БЛОКА ЛИНИЙ
-    // ==========================================================
+#pragma endregion
+    // --- 1. Начинаем запись данных для ImGui (на CPU) ---
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    // --- 2. Ваш код для создания интерфейса ---
+    ImGui::Begin("Debug Menu");
+    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+    ImGui::Text("Bodies: %zu", physicsWorld.getBodyCount());
+    if (ImGui::Checkbox("Gravity Downward", &physicsWorld.gravitySettings.enableDownward)) {}
+    if (ImGui::Checkbox("Mutual Gravity", &physicsWorld.gravitySettings.enableMutual)) {}
+    if (ImGui::SliderFloat("G-Constant", &physicsWorld.gravitySettings.gravitationalConstant, 0.0f, 200000.0f)) {}
+    if (ImGui::Button("Clear Scene")) {
+        scene.circles.clear();
+        scene.lines.clear();
+        scene.quads.clear();
+        physicsWorld.clearBodies();
+        // Очистить scene.circles и physicsWorld.getBodies()
+    }
+    if (ImGui::Button("Add Circle")) {
+        scene.addRandomCircle(physicsWorld);
+    }
+    ImGui::End();
+
+    // --- 3. Завершаем запись данных для ImGui ---
+    ImGui::Render();
 
     // Начинаем GPU-зону для всего прохода рендеринга
     TracyVkZone(tracyVkCtx, graphicsCommandBuffers[currentFrame], "Main Render Pass");
@@ -447,6 +473,30 @@ void Renderer::drawFrame(
     
 
     // 12. Завершаем rendering
+    vkCmdEndRendering(graphicsCommandBuffers[currentFrame]);
+
+    // --- БЛОК РЕНДЕРИНГА IMGUI ---
+    VkRenderingAttachmentInfoKHR uiAttachment{};
+    uiAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+    uiAttachment.imageView = swapchain.swapChainImageViews[imageIndex];
+    uiAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    uiAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD; // <-- ВАЖНО: Загружаем, а не очищаем!
+    uiAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+    VkRenderingInfoKHR uiRenderingInfo{};
+    uiRenderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
+    uiRenderingInfo.renderArea = { {0, 0}, swapchain.swapChainExtent };
+    uiRenderingInfo.layerCount = 1;
+    uiRenderingInfo.colorAttachmentCount = 1;
+    uiRenderingInfo.pColorAttachments = &uiAttachment;
+
+    // Начинаем рендеринг UI
+    vkCmdBeginRendering(graphicsCommandBuffers[currentFrame], &uiRenderingInfo);
+
+    // Рисуем ImGui
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), graphicsCommandBuffers[currentFrame]);
+
+    // Завершаем рендеринг UI
     vkCmdEndRendering(graphicsCommandBuffers[currentFrame]);
 
     // 13. Release-барьер: передача владения graphics → present

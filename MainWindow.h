@@ -9,6 +9,10 @@
 #include "Renderer.h"
 #include "Scene.h"
 #include "PipelineConfigs.h"
+#include "PhysicsWorld.h"
+#include "imgui_impl_vulkan.h"
+#include "imgui_impl_glfw.h"
+#include "imgui.h"
 
 class MainApp
 {
@@ -28,6 +32,7 @@ private:
     PipelineManager pipelines;
     Renderer renderer;
     Scene scene;
+    PhysicsWorld physicsWorld;
     HWND hwnd = nullptr;
     
     TracyVkCtx tracyVkCtx = nullptr;
@@ -42,6 +47,8 @@ private:
 
     void initVulkan();
     
+
+    void initScene();
     
     
     void renderLoop();
@@ -49,6 +56,9 @@ private:
 
     void cleanup()
     {
+        ImGui_ImplVulkan_Shutdown();
+        ImGui_ImplGlfw_Shutdown();
+        ImGui::DestroyContext();
         // 0. Уничтожаем контекст Tracy (освобождает VkQueryPool и другие внутренние ресурсы)
         if (tracyVkCtx != nullptr) {
             TracyVkDestroy(tracyVkCtx);

@@ -25,6 +25,7 @@ public:
     VkDescriptorSetLayout descriptorSetLayoutGraphics;
     VkDescriptorSetLayout descriptorSetLayoutCompute;
     VkDescriptorPool descriptorPool;
+    VkDescriptorPool descriptorPoolImGUI;
     std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> descriptorSetsGraphics;
     std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> descriptorSetsCompute;
 
@@ -35,7 +36,7 @@ public:
 
     void createBuffer(VkPhysicalDevice physicalDevice, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
     void createRequiredBuffers(VkPhysicalDevice physicalDevice);
-    void createDescriptorPool();
+    void createDescriptorPools();
     void createDescriptorSets();
     void createDescriptorSetLayouts();
     void updateCircleUniformBuffer(Scene& scene,uint32_t currentImage);
@@ -61,6 +62,7 @@ public:
          descriptorSetLayoutGraphics = VK_NULL_HANDLE;
          descriptorSetLayoutCompute = VK_NULL_HANDLE;
          descriptorPool = VK_NULL_HANDLE;
+         descriptorPoolImGUI = VK_NULL_HANDLE;
          descriptorSetsGraphics.fill(VK_NULL_HANDLE);
          descriptorSetsCompute.fill(VK_NULL_HANDLE);
     }
@@ -84,6 +86,7 @@ public:
         descriptorSetLayoutGraphics = VK_NULL_HANDLE;
         descriptorSetLayoutCompute = VK_NULL_HANDLE;
         descriptorPool = VK_NULL_HANDLE;
+        descriptorPoolImGUI = VK_NULL_HANDLE;
         descriptorSetsGraphics.fill(VK_NULL_HANDLE);
         descriptorSetsCompute.fill(VK_NULL_HANDLE);
     }
@@ -95,6 +98,10 @@ public:
         // освобождаются автоматически. Вызывать vkFreeDescriptorSets не нужно!
         if (descriptorPool != VK_NULL_HANDLE) {
             vkDestroyDescriptorPool(device, descriptorPool, nullptr);
+        }
+
+        if (descriptorPoolImGUI != VK_NULL_HANDLE) {
+            vkDestroyDescriptorPool(device, descriptorPoolImGUI, nullptr);
         }
 
         // 2. Уничтожаем Layout'ы дескрипторов

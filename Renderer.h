@@ -5,6 +5,7 @@ class SwapchainManager;
 class PipelineManager;
 class ResourceManager;
 class Scene;
+class PhysicsWorld;
 
 class Renderer
 {
@@ -32,6 +33,7 @@ public:
         PipelineManager& pipelines,
         ResourceManager& resources,
         Scene& scene,
+        PhysicsWorld& physicsWorld,
         TracyVkCtx tracyVkCtx = nullptr
     );
     void createCommandPool(QueueFamilyIndices queueFamilyIndices);

@@ -1,5 +1,7 @@
 #include "Scene.h"
 #include <cmath> // Для std::sin
+#include <random>
+#include "PhysicsWorld.h"
 
 size_t Scene::AddQuad(glm::vec2 topLeft, glm::vec2 topRight, glm::vec2 bottomRight, glm::vec2 bottomLeft, glm::vec4 color)
 {
@@ -97,4 +99,56 @@ void Scene::AddSineWave(float startX, float endX, float step, float amplitude, f
     }
 
     AddCurve(points, color, thickness);
+}
+
+void Scene::addPhysicalCircle(PhysicsWorld& physics, glm::vec2 pos, float radius, glm::vec4 color, float mass) {
+    // 1. Создаем визуал
+    CircleData c{}; c.center = pos; c.radius = radius; c.color = color;
+    size_t visualIdx = circles.size();
+    circles.push_back(c);
+
+    // 2. Создаем тело
+    Rigidbody2D body{};
+    body.position = pos;
+    body.setMass(mass);
+    body.restitution = 0.9f;
+    // Настраиваем коллайдер
+    body.collider.type = ColliderType::Circle;
+    body.collider.circle.radius = radius;
+
+    size_t bodyIdx = physics.addBody(body);
+
+    // 3. Связываем: визуал знает про тело
+    circles[visualIdx].physicsIndex = static_cast<uint32_t>(bodyIdx);
+};
+
+void Scene::addRandomCircle(PhysicsWorld& physics) {
+    // Инициализируем генератор один раз (static), чтобы не тратить ресурсы каждый вызов
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+
+    // 1. Случайный радиус от 10 до 40 пикселей
+    std::uniform_real_distribution<float> radiusDist(10.0f, 40.0f);
+    float radius = radiusDist(gen);
+
+    // 2. Случайная позиция (X и Y)
+    // Важно: вычитаем радиус из краев, чтобы шар не появлялся наполовину за экраном
+    std::uniform_real_distribution<float> posXDist(radius, WIDTH - radius);
+    std::uniform_real_distribution<float> posYDist(radius, HEIGHT - radius);
+    glm::vec2 pos = { posXDist(gen), posYDist(gen) };
+
+    // 3. Случайный цвет (RGB от 0.0 до 1.0, альфа = 1.0)
+    std::uniform_real_distribution<float> colorDist(0.0f, 1.0f);
+    glm::vec4 color = {
+        colorDist(gen),
+        colorDist(gen),
+        colorDist(gen),
+        1.0f
+    };
+    // 4. Случайная масса от 1.0 до 10.0 (чтобы шары по-разному отталкивались)
+    std::uniform_real_distribution<float> massDist(1.0f, 10.0f);
+    float mass = massDist(gen);
+
+    // 5. Вызываем вашу существующую функцию
+    addPhysicalCircle(physics, pos, radius, color, mass);
 }

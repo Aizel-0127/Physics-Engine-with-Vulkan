@@ -31,8 +31,8 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 
-const uint32_t WIDTH = 800;
-const uint32_t HEIGHT = 600;
+const uint32_t WIDTH = 1400;
+const uint32_t HEIGHT = 1000;
 
 static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 static constexpr uint32_t MAX_CIRCLES = 100;

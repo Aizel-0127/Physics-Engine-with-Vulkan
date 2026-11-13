@@ -1,6 +1,7 @@
 #include "Config.h"
 #include "MainWindow.h"
 
+
 void MainApp::mainLoop()
 {
     // 1. Запускаем поток рендеринга перед началом основного цикла
@@ -32,8 +33,12 @@ void MainApp::mainLoop()
 // Новая функция, которая выполняется в отдельном потоке
 void MainApp::renderLoop()
 {
+    auto lastTime = std::chrono::high_resolution_clock::now();
     while (isRunning)
     {
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        float deltaTime = std::chrono::duration<float>(currentTime - lastTime).count();
+        lastTime = currentTime;
         RECT rect;
         if (GetClientRect(hwnd, &rect)) // Получаем актуальный размер клиентской области
         {
@@ -53,8 +58,34 @@ void MainApp::renderLoop()
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
             continue;
         }
+        // 1. Обновляем физику
+        physicsWorld.update(deltaTime, swapchain.currentWidth, swapchain.currentHeight);
 
-        renderer.drawFrame(context, swapchain, pipelines, resources, scene, tracyVkCtx);
+        // 2. Синхронизируем визуальные данные с физическими
+        // Синхронизация кругов (простая)
+        for (auto& c : scene.circles) {
+            if (c.physicsIndex != UINT32_MAX) {
+                c.center = physicsWorld.getBody(c.physicsIndex).position;
+            }
+        }
+
+        // Синхронизация квадов (с учетом вращения)
+        for (auto& q : scene.quads) {
+            if (q.physicsIndex != UINT32_MAX) {
+                const auto& body = physicsWorld.getBody(q.physicsIndex);
+                // Трансформируем локальные углы квада через позицию и поворот тела
+                // (пока поворота нет — просто сдвигаем)
+                for (auto& p : q.points) {
+                    // p_local + body.position (упрощенно)
+                }
+            }
+        }
+
+        // Синхронизация линий (если мягкая — двигаем каждую точку)
+        for (auto& line : scene.lines) {
+            // В зависимости от логики
+        }
+        renderer.drawFrame(context, swapchain, pipelines, resources, scene,physicsWorld, tracyVkCtx);
         FrameMark;
     }
 }
@@ -82,6 +113,20 @@ void MainApp::framebufferResizeCallback(GLFWwindow* window, int width, int heigh
     app->swapchain.currentWidth = width;
     app->swapchain.currentHeight = height;
     app->swapchain.framebufferResized = true;
+}
+
+
+
+void MainApp::initScene() {
+
+    // Крупный мяч в центре
+    scene.addPhysicalCircle(physicsWorld, { WIDTH / 2.0f, HEIGHT / 2.0f }, 240.0f, { 1.0f, 0.5f, 0.0f, 1.0f }, 1000.0f);
+
+    // Меньший мяч
+    scene.addPhysicalCircle(physicsWorld, { WIDTH / 4.0f, 3.0f * HEIGHT / 4.0f }, 100.0f, { 0.0f, 0.5f, 0.7f, 1.0f }, 200.0f);
+
+    // Мелкий мяч
+    scene.addPhysicalCircle(physicsWorld, { WIDTH * 5.0f / 7.0f, HEIGHT * 6.0f / 8.0f }, 30.0f, { 0.2f, 0.2f, 0.8f, 1.0f }, 100.0f);
 }
 
 int main() {
