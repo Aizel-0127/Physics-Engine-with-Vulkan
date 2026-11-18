@@ -14,10 +14,11 @@ struct Vertex {
     glm::vec4 color;
 };
 
-struct Quad
+struct PolygonVk
 {
     // Порядок вершин: 0 - слева сверху и дальше по часовой
-    std::array<glm::vec2, 4> points;
+    std::array<glm::vec2, maxPolygonVerticesVulkan> points; // Максимум maxPolygonVerticesVulkan вершин
+    int vertexCount = 4;             // Сколько реально используется
     glm::vec4 color;
     uint32_t physicsIndex = UINT32_MAX;
 };

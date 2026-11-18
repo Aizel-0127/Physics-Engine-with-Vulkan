@@ -47,9 +47,7 @@ private:
 
     void initVulkan();
     
-
     void initScene();
-    
     
     void renderLoop();
     void mainLoop();

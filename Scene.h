@@ -24,18 +24,19 @@ public:
     //0.0f,                                      // padding
     //glm::vec4(0.2f, 0.2f, 0.8f, 1.0f)          // color 
     //    } };
-    std::vector<Quad> quads;
-    std::vector<Vertex> quadVertices;
+    std::vector<PolygonVk> polygons;
+    std::vector<Vertex> polygonVertices;
     std::vector<Curve> lines;
 
-    size_t AddQuad(glm::vec2 topLeft, glm::vec2 topRight, glm::vec2 bottomRight, glm::vec2 bottomLeft, glm::vec4 color);
-    size_t AddQuad(const Quad&);
+    void UpdatePolygonVertices(const PhysicsWorld& physicsWorld);
     size_t AddCurve(const std::vector<glm::vec2>& points, glm::vec4 color, float thickness);
     void addRandomCircle(PhysicsWorld& physics);
+    void addPhysicalPolygon(PhysicsWorld& physics, glm::vec2 pos, const std::vector<glm::vec2>& localVerts, glm::vec4 color, float density);
+    void addRandomPolygon(PhysicsWorld& physics);
     void addPhysicalCircle(PhysicsWorld& physics, glm::vec2 pos, float radius, glm::vec4 color, float mass);
+    void addStaticQuad(PhysicsWorld& physics, glm::vec2 center, glm::vec2 halfExtents, glm::vec4 color);
 
     // Тестовая функция для генерации графика функции (синусоиды)
     void AddSineWave(float startX, float endX, float step, float amplitude, float offsetY, glm::vec4 color, float thickness);
-    void UpdateQuadVertices();
     
 };

@@ -262,18 +262,18 @@ void Renderer::drawFrame(
     renderingInfo.colorAttachmentCount = 1;
     renderingInfo.pColorAttachments = &colorAttachment;
 
-    if (!scene.quads.empty()) {
+    if (!scene.polygons.empty()) {
         // 1. Обновляем данные на CPU
-        scene.UpdateQuadVertices();
+        scene.UpdatePolygonVertices(physicsWorld);
         // 2. Проверяем, хватает ли памяти в буферах GPU. 
         // Если квадов стало больше, функция пересоздаст буферы.
-        resources.ensureQuadBufferCapacity(context.physicalDevice, scene.quads.size());
-        VkDeviceSize dataSize = sizeof(Vertex) * scene.quadVertices.size();
+        resources.ensureQuadBufferCapacity(context.physicalDevice, scene.polygons.size());
+        VkDeviceSize dataSize = sizeof(Vertex) * scene.polygonVertices.size();
 
         // 2. Копируем данные CPU -> Staging Buffer (RAM)
         void* data;
         vkMapMemory(context.device, resources.quadStagingBufferMemory[currentFrame], 0, dataSize, 0, &data);
-        memcpy(data, scene.quadVertices.data(), dataSize);
+        memcpy(data, scene.polygonVertices.data(), dataSize);
         vkUnmapMemory(context.device, resources.quadStagingBufferMemory[currentFrame]);
 
         // 3. Копируем данные Staging Buffer -> Vertex Buffer (VRAM)
@@ -310,16 +310,26 @@ void Renderer::drawFrame(
         std::vector<GPULinePoint> gpuPoints;
         // (Здесь вы должны пройтись по scene.lines и заполнить gpuPoints)
         // Пример:
-         for (const auto& line : scene.lines) {
-             for (size_t i = 0; i < line.points.size(); ++i) {
-                 GPULinePoint p{};
-                 p.position = line.points[i].position;
-                 p.thickness = line.thickness;
-                 p.color = line.color;
-                 p.isEndOfLine = (i == line.points.size() - 1) ? 1 : 0;
-                 gpuPoints.push_back(p);
-             }
-         }
+        const auto& bodies = physicsWorld.getBodies();
+        for (const auto& line : scene.lines) {
+            if (line.physicsIndex != UINT32_MAX) {
+                const auto& body = bodies[line.physicsIndex];
+                for (size_t i = 0; i < line.points.size(); ++i) {
+                    GPULinePoint p{};
+
+                    // Трансформируем каждую точку линии
+                    phys::Vec2 localPt(line.points[i].position.x, line.points[i].position.y);
+                    phys::Vec2 rotated = phys::Mul(body.transform.q, localPt);
+                    phys::Vec2 worldPt = rotated + body.transform.p;
+
+                    p.position = { worldPt.x, worldPt.y };
+                    p.thickness = line.thickness;
+                    p.color = line.color;
+                    p.isEndOfLine = (i == line.points.size() - 1) ? 1 : 0;
+                    gpuPoints.push_back(p);
+                }
+            }
+        }
 
         if (!gpuPoints.empty()) {
             // 2. Копируем данные в Input SSBO
@@ -389,12 +399,15 @@ void Renderer::drawFrame(
     if (ImGui::Button("Clear Scene")) {
         scene.circles.clear();
         scene.lines.clear();
-        scene.quads.clear();
+        scene.polygons.clear();
         physicsWorld.clearBodies();
         // Очистить scene.circles и physicsWorld.getBodies()
     }
     if (ImGui::Button("Add Circle")) {
         scene.addRandomCircle(physicsWorld);
+    }
+    if (ImGui::Button("Add Quad")) {
+        scene.addRandomPolygon(physicsWorld);
     }
     ImGui::End();
 
@@ -425,12 +438,12 @@ void Renderer::drawFrame(
         0, sizeof(glm::mat4), &projection);
     // 9. Привязываем pipeline и descriptor set
     #pragma region QuadDraw
-        if (!scene.quads.empty()) {
+        if (!scene.polygons.empty()) {
                 vkCmdBindPipeline(graphicsCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.quadPipeline);
                 VkBuffer vertexBuffers[] = { resources.quadVertexBuffers[currentFrame] }; // Берем VRAM буфер
                 VkDeviceSize offsets[] = { 0 };
                 vkCmdBindVertexBuffers(graphicsCommandBuffers[currentFrame], 0, 1, vertexBuffers, offsets);
-                vkCmdDraw(graphicsCommandBuffers[currentFrame], static_cast<uint32_t>(scene.quadVertices.size()), 1, 0, 0);
+                vkCmdDraw(graphicsCommandBuffers[currentFrame], static_cast<uint32_t>(scene.polygonVertices.size()), 1, 0, 0);
             }
     #pragma endregion
 

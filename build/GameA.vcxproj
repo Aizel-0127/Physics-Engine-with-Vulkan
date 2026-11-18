@@ -800,6 +800,25 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClInclude Include="C:\Prog\GameA\PipelineManager.h" />
     <ClInclude Include="C:\Prog\GameA\Scene.h" />
     <ClInclude Include="C:\Prog\GameA\PhysicsWorld.h" />
+    <ClInclude Include="C:\Prog\GameA\Physics\PhysicsSettings.h" />
+    <ClInclude Include="C:\Prog\GameA\Physics\PhysicsMath.h" />
+    <ClCompile Include="C:\Prog\GameA\Physics\PhysicsMath.cpp" />
+    <ClInclude Include="C:\Prog\GameA\Physics\Collision.h" />
+    <ClCompile Include="C:\Prog\GameA\Physics\Collision.cpp" />
+    <ClInclude Include="C:\Prog\GameA\Physics\Shape.h" />
+    <ClInclude Include="C:\Prog\GameA\Physics\CircleShape.h" />
+    <ClCompile Include="C:\Prog\GameA\Physics\CircleShape.cpp" />
+    <ClInclude Include="C:\Prog\GameA\Physics\PolygonShape.h" />
+    <ClCompile Include="C:\Prog\GameA\Physics\PolygonShape.cpp" />
+    <ClInclude Include="C:\Prog\GameA\Physics\EdgeShape.h" />
+    <ClCompile Include="C:\Prog\GameA\Physics\EdgeShape.cpp" />
+    <ClInclude Include="C:\Prog\GameA\Physics\ChainShape.h" />
+    <ClCompile Include="C:\Prog\GameA\Physics\ChainShape.cpp" />
+    <ClInclude Include="C:\Prog\GameA\Physics\Distance.h" />
+    <ClCompile Include="C:\Prog\GameA\Physics\Distance.cpp" />
+    <ClCompile Include="C:\Prog\GameA\Physics\CollideCircle.cpp" />
+    <ClCompile Include="C:\Prog\GameA\Physics\CollideEdge.cpp" />
+    <ClCompile Include="C:\Prog\GameA\Physics\CollidePolygon.cpp" />
     <None Include="C:\Prog\GameA\build\Debug\CircleShader.vert.spv">
     </None>
     <None Include="C:\Prog\GameA\build\Debug\CircleShader.frag.spv">

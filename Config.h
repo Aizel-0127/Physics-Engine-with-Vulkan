@@ -34,6 +34,8 @@
 const uint32_t WIDTH = 1400;
 const uint32_t HEIGHT = 1000;
 
+const uint32_t maxPolygonVerticesVulkan = 8;
+
 static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 static constexpr uint32_t MAX_CIRCLES = 100;
 static constexpr uint32_t MAX_TOTAL_POINTS = 10000; //Максимальное кол-во точек, которое может обработаться при отрисовке всех линий (Curve из Primitives.h) 

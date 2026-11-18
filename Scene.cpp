@@ -2,70 +2,38 @@
 #include <cmath> // Для std::sin
 #include <random>
 #include "PhysicsWorld.h"
+#include "Physics/PolygonShape.h"
+#include "Physics/CircleShape.h"
 
-size_t Scene::AddQuad(glm::vec2 topLeft, glm::vec2 topRight, glm::vec2 bottomRight, glm::vec2 bottomLeft, glm::vec4 color)
-{
-    Quad quad;
-    quad.color = color;
-    quad.points[0] = topLeft;
-    quad.points[1] = topRight;
-    quad.points[2] = bottomRight;
-    quad.points[3] = bottomLeft;
-    return AddQuad(quad);
-}
+void Scene::UpdatePolygonVertices(const PhysicsWorld& physicsWorld) {
+    polygonVertices.clear();
+    const auto& bodies = physicsWorld.getBodies();
+    for (const auto& poly : polygons) {
+        std::array<phys::Vec2, 8> worldPoints;
 
-size_t Scene::AddQuad(const Quad& quad)
-{
-    size_t index = quads.size();
-    quads.push_back(quad);
+        // Получаем мировые координаты точек
+        if (poly.physicsIndex != UINT32_MAX && poly.physicsIndex < bodies.size()) {
+            const auto& body = bodies[poly.physicsIndex];
+            for (int i = 0; i < poly.vertexCount; ++i) {
+                phys::Vec2 localPt(poly.points[i].x, poly.points[i].y);
+                phys::Vec2 rotated = phys::Mul(body.transform.q, localPt);
+                worldPoints[i] = rotated + body.transform.p;
+            }
+        }
+        else {
+            for (int i = 0; i < poly.vertexCount; ++i) {
+                worldPoints[i] = phys::Vec2(poly.points[i].x, poly.points[i].y);
+            }
+        }
 
-    //VkDeviceSize requiredSize = quads.size() * 6 * sizeof(Vertex);
-
-    //if (requiredSize > quadBufferSize) {
-
-    //    quadBufferSize = requiredSize + (sizeof(Vertex) * 6 * 500); // Запас на 500 квадов 
-
-    //    vkDeviceWaitIdle(device);
-    //    // 1. Уничтожаем старые буферы и Создаем буфер в видеопамяти (DEVICE_LOCAL)
-    //    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-    //        vkDestroyBuffer(device, quadVertexBuffers[i], nullptr);
-    //        vkFreeMemory(device, quadVertexBufferMemory[i], nullptr);
-    //        createBuffer(
-    //            quadBufferSize,
-    //            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, // <-- Важно: TRANSFER_DST
-    //            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,                                  // <-- Важно: DEVICE_LOCAL
-    //            quadVertexBuffers[i],
-    //            quadVertexBufferMemory[i]
-    //        );
-    //        vkDestroyBuffer(device, quadStagingBuffers[i], nullptr);
-    //        vkFreeMemory(device, quadStagingBufferMemory[i], nullptr);
-    //        createBuffer(
-    //            quadBufferSize,
-    //            VK_BUFFER_USAGE_TRANSFER_SRC_BIT, // <-- Важно: TRANSFER_SRC
-    //            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-    //            quadStagingBuffers[i],
-    //            quadStagingBufferMemory[i]
-    //        );
-    //    }
-    //}
-    return index;
-}
-
-void Scene::UpdateQuadVertices()
-{
-    quadVertices.clear();
-    quadVertices.reserve(quads.size() * 6); // 6 вершин на квад
-
-    for (const auto& quad : quads) {
-        // Треугольник 1: 0, 2, 3
-        quadVertices.push_back({ quad.points[0], quad.color });
-        quadVertices.push_back({ quad.points[2], quad.color });
-        quadVertices.push_back({ quad.points[3], quad.color });
-
-        // Треугольник 2: 0, 1, 2
-        quadVertices.push_back({ quad.points[0], quad.color });
-        quadVertices.push_back({ quad.points[1], quad.color });
-        quadVertices.push_back({ quad.points[2], quad.color });
+        // ВЕЕРНАЯ ТРИАНГУЛЯЦИЯ (Triangle Fan)
+        // Для N вершин создаем N-2 треугольников
+        for (int i = 1; i < poly.vertexCount - 1; ++i) {
+            // Треугольник: (0, i, i+1)
+            polygonVertices.push_back({ {worldPoints[0].x, worldPoints[0].y}, poly.color });
+            polygonVertices.push_back({ {worldPoints[i].x, worldPoints[i].y}, poly.color });
+            polygonVertices.push_back({ {worldPoints[i + 1].x, worldPoints[i + 1].y}, poly.color });
+        }
     }
 }
 
@@ -102,25 +70,71 @@ void Scene::AddSineWave(float startX, float endX, float step, float amplitude, f
 }
 
 void Scene::addPhysicalCircle(PhysicsWorld& physics, glm::vec2 pos, float radius, glm::vec4 color, float mass) {
-    // 1. Создаем визуал
-    CircleData c{}; c.center = pos; c.radius = radius; c.color = color;
-    size_t visualIdx = circles.size();
-    circles.push_back(c);
+    // 1. Создаем физическое тело
+    Rigidbody2D body;
+    body.type = BodyType::Dynamic;
+    body.transform.p = phys::Vec2(pos.x, pos.y);
+    body.transform.q.SetIdentity(); // Начальный угол поворота — 0
 
-    // 2. Создаем тело
-    Rigidbody2D body{};
-    body.position = pos;
-    body.setMass(mass);
-    body.restitution = 0.9f;
-    // Настраиваем коллайдер
-    body.collider.type = ColliderType::Circle;
-    body.collider.circle.radius = radius;
+    // 2. Создаем форму (круг)
+    phys::CircleShape* shape = new phys::CircleShape();
+    shape->m_radius = radius;
+    shape->m_p.SetZero(); // Центр масс совпадает с центром тела
+    body.shape = shape;
 
+    // 3. Вычисляем массу и момент инерции
+    // В Box2D ComputeMass принимает плотность (density), а не массу.
+    // Поэтому мы сначала вычисляем площадь, а затем находим плотность: density = mass / area.
+    float area = phys::pi * radius * radius;
+    float density = (area > 0.0f) ? (mass / area) : 0.0f;
+
+    phys::MassData massData;
+    shape->ComputeMass(&massData, density);
+
+    body.mass = massData.mass;
+    body.invMass = (body.mass > 0.0f) ? 1.0f / body.mass : 0.0f;
+
+    body.inertia = massData.I;
+    body.invInertia = (body.inertia > 0.0f) ? 1.0f / body.inertia : 0.0f;
+
+    // 4. Задаем физические свойства
+    body.friction = 0.3f;
+    body.restitution = 0.9f;      // Высокая упругость для мячей
+    body.angularDamping = 0.1f;   // Затухание вращения
+    body.isSleeping = false;
+    body.sleepTimer = 0.0f;
+
+    // 5. Добавляем тело в мир
     size_t bodyIdx = physics.addBody(body);
 
-    // 3. Связываем: визуал знает про тело
-    circles[visualIdx].physicsIndex = static_cast<uint32_t>(bodyIdx);
-};
+    // 6. Создаем визуальный объект
+    CircleData c{};
+    c.center = pos;
+    c.radius = radius;
+    c.color = color;
+    c.physicsIndex = static_cast<uint32_t>(bodyIdx); // Связываем визуал с физикой
+
+    circles.push_back(c);
+}
+
+void Scene::addStaticQuad(PhysicsWorld& physics, glm::vec2 center, glm::vec2 halfExtents, glm::vec4 color)
+{
+    // 1. Создаем физическое тело и получаем его индекс
+    size_t bodyIdx = physics.addStaticBox(center, halfExtents);
+
+    // 2. Создаем визуальный квад (ЛОКАЛЬНЫЕ координаты)
+    PolygonVk q;
+    q.points[0] = { -halfExtents.x, -halfExtents.y }; // TopLeft
+    q.points[1] = { halfExtents.x, -halfExtents.y }; // TopRight
+    q.points[2] = { halfExtents.x,  halfExtents.y }; // BottomRight
+    q.points[3] = { -halfExtents.x,  halfExtents.y }; // BottomLeft
+
+    q.color = color;
+    // Привязываем к физическому телу! Теперь UpdateQuadVertices сам применит трансформацию.
+    q.physicsIndex = static_cast<uint32_t>(bodyIdx);
+
+    polygons.push_back(q);
+}
 
 void Scene::addRandomCircle(PhysicsWorld& physics) {
     // Инициализируем генератор один раз (static), чтобы не тратить ресурсы каждый вызов
@@ -151,4 +165,130 @@ void Scene::addRandomCircle(PhysicsWorld& physics) {
 
     // 5. Вызываем вашу существующую функцию
     addPhysicalCircle(physics, pos, radius, color, mass);
+}
+
+void Scene::addPhysicalPolygon(PhysicsWorld& physics, glm::vec2 pos,
+    const std::vector<glm::vec2>& localVerts,
+    glm::vec4 color, float density) {
+
+    if (localVerts.size() < 3 || localVerts.size() > maxPolygonVerticesVulkan) {
+        throw std::runtime_error("Polygon must have between 3 and {maxPolygonVerticesVulkan} vertices");
+    }
+    // 1. Создаем физическое тело
+    Rigidbody2D body;
+    body.type = BodyType::Dynamic;
+    body.transform.p = phys::Vec2(pos.x, pos.y);
+    body.transform.q.SetIdentity(); // Угол поворота теперь определяется самими вершинами
+
+    // 2. Создаем форму (произвольный выпуклый четырёхугольник)
+    phys::PolygonShape* shape = new phys::PolygonShape();
+
+    // Конвертируем glm::vec2 в phys::Vec2
+
+    phys::Vec2 physVerts[8];
+    for (size_t i = 0; i < localVerts.size(); ++i) {
+        physVerts[i] = phys::Vec2(localVerts[i].x, localVerts[i].y);
+    }
+
+    // Передаем вершины в Box2D (он сам сделает их выпуклыми и найдет центр)
+    shape->Set(physVerts, static_cast<int32_t>(localVerts.size()));
+    body.shape = shape;
+
+    // 3. Вычисляем массу и момент инерции
+    phys::MassData massData;
+    shape->ComputeMass(&massData, density);
+
+    body.mass = massData.mass;
+    body.invMass = (body.mass > 0.0f) ? 1.0f / body.mass : 0.0f;
+    body.inertia = massData.I;
+    body.invInertia = (body.inertia > 0.0f) ? 1.0f / body.inertia : 0.0f;
+
+    // 4. Физические свойства
+    body.friction = 0.3f;
+    body.restitution = 0.2f;
+    body.angularDamping = 0.1f;
+    body.isSleeping = false;
+    body.velocity = { 0,0 };
+
+    // 5. Добавляем в мир
+    size_t bodyIdx = physics.addBody(body);
+
+    // 6. Создаем визуальный объект
+    PolygonVk q;
+    for (size_t i = 0; i < localVerts.size(); ++i) {
+        q.points[i] = localVerts[i];
+    }
+    q.vertexCount = static_cast<int>(localVerts.size());
+    q.color = color;
+    q.physicsIndex = static_cast<uint32_t>(bodyIdx);
+
+    polygons.push_back(q);
+}
+
+void Scene::addRandomPolygon(PhysicsWorld& physics) {
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+
+    // 1. Случайная позиция центра
+    std::uniform_real_distribution<float> posXDist(100.0f, WIDTH - 100.0f);
+    std::uniform_real_distribution<float> posYDist(100.0f, HEIGHT - 100.0f);
+    glm::vec2 pos = { posXDist(gen), posYDist(gen) };
+
+    // 2. Случайное количество вершин (от 3 до 8)
+    std::uniform_int_distribution<int> vertexCountDist(3, 8);
+    int numVertices = vertexCountDist(gen);
+
+    // 3. Генерируем вершины (локально вокруг 0,0)
+    std::uniform_real_distribution<float> sizeDist(15.0f, 50.0f);
+
+    // Уменьшаем разброс угла в зависимости от количества вершин, 
+    // чтобы фигура не получилась самопересекающейся
+    float jitterAmount = (phys::pi / numVertices) * 0.4f;
+    std::uniform_real_distribution<float> angleJitterDist(-jitterAmount, jitterAmount);
+
+    std::vector<glm::vec2> localVerts(numVertices);
+    bool generate_again = false;
+    do
+    {
+        generate_again = false;
+        for (int i = 0; i < numVertices; ++i) {
+            // Равномерно распределяем базовые углы
+            float baseAngle = (2.0f * phys::pi * i) / numVertices;
+            float angle = baseAngle + angleJitterDist(gen);
+            float r = sizeDist(gen);
+            localVerts[i] = { r * std::cos(angle), r * std::sin(angle) };
+        }
+        for (int i = 0; i < numVertices; ++i)   //используем знак векторного произведения, чтобы отсечь невыпуклые многоугольники
+        {
+            glm::vec2 a = { localVerts[(i + numVertices - 1) % numVertices].x - localVerts[(i - 2 + numVertices) % numVertices].x, localVerts[(i - 1 + numVertices) % numVertices].y - localVerts[(i - 2 + numVertices) % numVertices].y };
+            glm::vec2 b = { localVerts[i].x - localVerts[(i - 1 + numVertices) % numVertices].x, localVerts[i].y - localVerts[(i - 1 + numVertices) % numVertices].y };
+            if (a.x * b.y - a.y * b.x < 0)
+            {
+                generate_again = true;
+                break;
+            }
+        }
+    } while (generate_again);
+    
+    // 4. Случайный цвет
+    std::uniform_real_distribution<float> colorDist(0.0f, 1.0f);
+    glm::vec4 color = { colorDist(gen), colorDist(gen), colorDist(gen), 1.0f };
+
+    // 5. Случайная масса и вычисление плотности
+    std::uniform_real_distribution<float> massDist(1.0f, 5.0f);
+    float mass = massDist(gen);
+
+    // Площадь выпуклого N-угольника (Формула шнуровки / Shoelace formula)
+    float area = 0.0f;
+    for (int i = 0; i < numVertices; ++i) {
+        int j = (i + 1) % numVertices;
+        area += localVerts[i].x * localVerts[j].y - localVerts[j].x * localVerts[i].y;
+    }
+    area = std::abs(area) * 0.5f;
+
+    // Вычисляем плотность (масса / площадь)
+    float density = (area > 0.0f) ? (mass / area) : 1.0f;
+
+    // 6. Вызываем общую функцию создания полигона
+    addPhysicalPolygon(physics, pos, localVerts, color, density);
 }

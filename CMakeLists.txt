@@ -122,6 +122,27 @@ add_executable(GameA
     Scene.h
     PhysicsWorld.h
 
+    Physics/PhysicsSettings.h
+    Physics/PhysicsMath.h
+    Physics/PhysicsMath.cpp
+    Physics/Collision.h
+    Physics/Collision.cpp
+    Physics/Shape.h
+    Physics/CircleShape.h
+    Physics/CircleShape.cpp
+    Physics/PolygonShape.h
+    Physics/PolygonShape.cpp
+    Physics/EdgeShape.h
+    Physics/EdgeShape.cpp
+    Physics/ChainShape.h
+    Physics/ChainShape.cpp
+    Physics/Distance.h
+    Physics/Distance.cpp
+    Physics/CollideCircle.cpp
+    Physics/CollideEdge.cpp
+    Physics/CollidePolygon.cpp
+
+
     # --- Скомпилированные шейдеры ---
     ${SHADER_SPV_FILES}
     ${IMGUI_SOURCES}

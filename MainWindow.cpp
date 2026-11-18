@@ -59,31 +59,36 @@ void MainApp::renderLoop()
             continue;
         }
         // 1. Обновляем физику
-        physicsWorld.update(deltaTime, swapchain.currentWidth, swapchain.currentHeight);
+        physicsWorld.update(deltaTime);
 
-        // 2. Синхронизируем визуальные данные с физическими
-        // Синхронизация кругов (простая)
-        for (auto& c : scene.circles) {
-            if (c.physicsIndex != UINT32_MAX) {
-                c.center = physicsWorld.getBody(c.physicsIndex).position;
+        // 2. Синхронизируем визуальные объекты с физическими
+        const auto& bodies = physicsWorld.getBodies();
+
+        // --- Синхронизация КРУГОВ (просто перенос позиции) ---
+        for (auto& circle : scene.circles) {
+            if (circle.physicsIndex != UINT32_MAX && circle.physicsIndex < bodies.size()) {
+                const auto& body = bodies[circle.physicsIndex];
+                circle.center = { body.transform.p.x, body.transform.p.y };
             }
         }
 
-        // Синхронизация квадов (с учетом вращения)
-        for (auto& q : scene.quads) {
-            if (q.physicsIndex != UINT32_MAX) {
-                const auto& body = physicsWorld.getBody(q.physicsIndex);
-                // Трансформируем локальные углы квада через позицию и поворот тела
-                // (пока поворота нет — просто сдвигаем)
-                for (auto& p : q.points) {
-                    // p_local + body.position (упрощенно)
-                }
+        // --- Синхронизация КВАДОВ (позиция + вращение) ---
+        for (auto& quad : scene.polygons) {
+            if (quad.physicsIndex != UINT32_MAX && quad.physicsIndex < bodies.size()) {
+                const auto& body = bodies[quad.physicsIndex];
+
+                // ВНИМАНИЕ: Мы НЕ меняем quad.points напрямую!
+                // Вместо этого мы передаем трансформацию в ваш метод UpdateQuadVertices,
+                // который сгенерирует мировые вершины для GPU.
             }
         }
 
-        // Синхронизация линий (если мягкая — двигаем каждую точку)
+        // --- Синхронизация ЛИНИЙ (позиция + вращение) ---
         for (auto& line : scene.lines) {
-            // В зависимости от логики
+            if (line.physicsIndex != UINT32_MAX && line.physicsIndex < bodies.size()) {
+                const auto& body = bodies[line.physicsIndex];
+                // То же самое: не меняем line.points, а применяем трансформацию при рендере.
+            }
         }
         renderer.drawFrame(context, swapchain, pipelines, resources, scene,physicsWorld, tracyVkCtx);
         FrameMark;
@@ -118,15 +123,67 @@ void MainApp::framebufferResizeCallback(GLFWwindow* window, int width, int heigh
 
 
 void MainApp::initScene() {
+    // =========================================================
+    // 1. Создаем стены (Статические объекты)
+    // =========================================================
+    float wallThickness = 50.0f;
+    glm::vec4 wallColor = { 0.3f, 0.3f, 0.3f, 1.0f };
 
-    // Крупный мяч в центре
-    scene.addPhysicalCircle(physicsWorld, { WIDTH / 2.0f, HEIGHT / 2.0f }, 240.0f, { 1.0f, 0.5f, 0.0f, 1.0f }, 1000.0f);
+    // Пол (нижняя стена)
+    scene.addStaticQuad(physicsWorld,
+        { WIDTH / 2.0f, HEIGHT + wallThickness / 2.0f },
+        { WIDTH / 2.0f, wallThickness / 2.0f },
+        wallColor);
 
-    // Меньший мяч
-    scene.addPhysicalCircle(physicsWorld, { WIDTH / 4.0f, 3.0f * HEIGHT / 4.0f }, 100.0f, { 0.0f, 0.5f, 0.7f, 1.0f }, 200.0f);
+    // Потолок (верхняя стена)
+    scene.addStaticQuad(physicsWorld,
+        { WIDTH / 2.0f, -wallThickness / 2.0f },
+        { WIDTH / 2.0f, wallThickness / 2.0f },
+        wallColor);
 
-    // Мелкий мяч
-    scene.addPhysicalCircle(physicsWorld, { WIDTH * 5.0f / 7.0f, HEIGHT * 6.0f / 8.0f }, 30.0f, { 0.2f, 0.2f, 0.8f, 1.0f }, 100.0f);
+    // Левая стена
+    scene.addStaticQuad(physicsWorld,
+        { -wallThickness / 2.0f, HEIGHT / 2.0f },
+        { wallThickness / 2.0f, HEIGHT / 2.0f },
+        wallColor);
+
+    // Правая стена
+    scene.addStaticQuad(physicsWorld,
+        { WIDTH + wallThickness / 2.0f, HEIGHT / 2.0f },
+        { wallThickness / 2.0f, HEIGHT / 2.0f },
+        wallColor);
+
+    // =========================================================
+    // 2. Создаем тестовые круги (Динамические объекты)
+    // =========================================================
+    scene.addPhysicalCircle(physicsWorld,
+        { WIDTH / 2.0f, HEIGHT / 2.0f }, 100.0f,
+        { 1.0f, 0.5f, 0.0f, 1.0f }, 10.0f);
+
+    scene.addPhysicalCircle(physicsWorld,
+        { WIDTH / 4.0f, HEIGHT / 4.0f }, 50.0f,
+        { 0.0f, 0.5f, 0.7f, 1.0f }, 2.0f);
+
+    scene.addPhysicalCircle(physicsWorld,
+        { WIDTH * 3.0f / 4.0f, HEIGHT / 4.0f }, 30.0f,
+        { 0.2f, 0.2f, 0.8f, 1.0f }, 1.0f);
+
+    // =========================================================
+    // 3. Создаем произвольный выпуклый четырёхугольник (Трапеция)
+    // =========================================================
+    std::vector<glm::vec2> trapezoidVerts = {
+        glm::vec2(-60.0f,  30.0f),
+        glm::vec2(60.0f,  30.0f),
+        glm::vec2(30.0f, -30.0f),
+        glm::vec2(-30.0f, -30.0f)
+    };
+
+    scene.addPhysicalPolygon(physicsWorld,
+        { WIDTH / 2.0f, HEIGHT / 3.0f },
+        trapezoidVerts,
+        { 0.2f, 0.8f, 0.2f, 1.0f },
+        1.0f
+    );
 }
 
 int main() {
